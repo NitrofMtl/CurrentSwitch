@@ -1,0 +1,6 @@
+currentSwitch	KEYWORD1
+initCurrentSwitch	KEYWORD2
+setCurrentSwitch	KEYWORD2
+workProof	KEYWORD2
+
+
