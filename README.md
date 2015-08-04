@@ -9,6 +9,9 @@ This skecht use a SCT-013-000. Interface with arduino here and original emonLib 
 Instead of emonLib that read real current, this on only return 'true' if there is 'some current'. 
 This is usefull usefull as workproof and very weightless compare to emonLib.
 
+Download transmiter Shematic : https://www.dropbox.com/sh/vzn5upzlsvuat84/AADQE0GaEtgEIRmh-AHvIBM9a?dl=0
+
+
   Copyright (c) 31/07/2015
 
     By Nitrof
