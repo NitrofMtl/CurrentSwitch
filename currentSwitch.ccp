@@ -1,5 +1,12 @@
 /*
-  
+CurrentSwitch Is a library to use non invasive current probe to use it a a 'working proof'. 
+This skecht use a SCT-013-000. Interface with arduino here and original emonLib library:
+ ***************  https://github.com/openenergymonitor/EmonLib  *************
+
+Instead of emonLib that read real current, this on only return 'true' if there is 'some current'. 
+This is usefull usefull as workproof and very weightless compare to emonLib.
+
+
   Copyright (c) 31/07/2015
 
     By Nitrof
@@ -26,53 +33,85 @@
 
   */
 
-
 #include "Arduino.h"
-#include "currentSwitch.h"
+#include "CurrentSwitch.h"
 
 
-void currentSwitch::initCurrentSwitch(int setReso){ //setup the input resolution, bias = resolution /2
-	reso = setReso;
-	if (setReso == 12){ //resolution set to 12 bit for arduino due
-		reso = 4096;
-		bias = 2048; //bias = reso /2
-	}
+CurrentSwitch* CurrentSwitch::container[containerSize] = {NULL,NULL,NULL,NULL,NULL,NULL};
+int CurrentSwitch::_reso = 1023; //10 bit resolotion
+int CurrentSwitch::bias = _reso = 511; //reso / 2
+unsigned long CurrentSwitch::lastMillis = 0;
+
+CurrentSwitch::CurrentSwitch(int channelId, int Irange, int Itrigger) : input(channelId), _Itrigger(Itrigger), _Irange(Irange)
+ { // initiate an input, param: analog input, current max of sensor, trigger expected to trigger true
+  for(int i = 0; i < containerSize; i++){
+    if(!container[i]) {
+      container[i] = this;
+      //_Irange = Irange;
+      triggerBit = Itrigger * _reso/2 / _Irange / 2  ;  // the last 2 divider is to higher the sensivity of the trigger
+      break;
+    }
+  }
 }
 
-void currentSwitch::setCurrentSwitch(int channelId, int Irange, int Itrigger){ // initiate an input, param: analog input, current max of sensor, trigger expected to trigger true
-	inputSet[channelId] = true;  //set that this input have benn setup
-	triggerBit[channelId] = Itrigger * reso/2 / Irange / 2  ;  // the last 2 divider is to higher the sensivity of the trigger
+CurrentSwitch::~CurrentSwitch(){
+  for(int i = 0; i < containerSize; i++){
+    if(this == container[i]) {
+      container[i] = NULL;
+      break;
+    }
+  }
 }
 
-void currentSwitch::update(){ 
-
-	if ((lastMillis - millis()) >= 3){ //timer check to scan every 3 miliseconde
-		for (int i = 0; i <= 11; i++){ //scan all analog input
-			if(inputSet[i]){ // if analog input a been activated
-				triggerLog[i] += inputRead(i); // do the check function and log it in to buffer
-				triggerLog[i] = constrain(triggerLog[i],0,10); // constrain buffer 
-			}
-		}
-		lastMillis = millis(); // setup the next check
-	}
+void CurrentSwitch::handler(){
+  if (lastMillis > millis()) lastMillis = millis(); //millis rool back chk 
+  if (!(lastMillis - millis()) >= 3) return;//timer check to scan every 3 miliseconde
+  for (int i = 0; i <= containerSize; i++){ //scan all analog input
+    if(!container[i]) continue; //do nothing if container emty
+    CurrentSwitch* instance = container[i];    
+    instance->triggerLog += instance->inputRead(instance->input); // do the check function and log it in to buffer
+    instance->triggerLog = constrain(instance->triggerLog,0,10); // constrain buffer 
+  }
+  lastMillis = millis(); // setup the next check
 }
 
-int currentSwitch::inputRead(int input){ 
-	int reading = analogRead(input);
-	int output = 0;
-	if ( (reading < (bias-triggerBit[input])) || (reading > (bias+triggerBit[input])) ){ // compare analog reading to the trigger set each side of the bias
-		output = 1; 
-	}
-	else {
-		output = -1;
-	}
-	return output; // return 1 if bigger or -1 if smaller
+void CurrentSwitch::reso(int reso) {
+  if (12 == reso){
+    _reso = 4095;
+    bias = 2047;
+  }
+  else if (10 == reso){
+    _reso = 1023;
+    bias = 511;
+  }
+  for (int i = 0; i <= containerSize; i++){ //apply new bit value to all trigger
+    if(!container[i]) continue; //do nothing if container emty
+    CurrentSwitch* instance = container[i];
+    instance->triggerBit = instance->_Itrigger * _reso/2 / instance->_Irange / 2  ;
+  }
 }
 
-boolean currentSwitch::workProof(int input){ // check if the trigger buffer have store workingProof
-	boolean matrixScan = false;
-	if (triggerLog[input] >= 3){ // if input read have return at least 3 time true, return true
-		matrixScan = true;
-	}
-	return matrixScan;
+int CurrentSwitch::inputRead(int input){ 
+  int reading = analogRead(input);
+  int output = 0;
+  if ( (reading < (bias-triggerBit)) || (reading > (bias+triggerBit)) ){ // compare analog reading to the trigger set each side of the bias
+    output = 1; 
+  }
+  else {
+    output = -1;
+  }
+  return output; // return 1 if bigger or -1 if smaller
+}
+
+boolean CurrentSwitch::workProof(int input){ // check if the trigger buffer have store workingProof
+  boolean buffer = false;
+  if (triggerLog >= 3){ // if input read have return at least 3 time true, return true
+    buffer = true;
+  }
+  return buffer;
+}
+
+void CurrentSwitch::trigger(int Itrigger){
+  triggerBit = Itrigger * _reso/2 / _Irange / 2  ;  // the last 2 divider is to higher the sensivity of the trigger
+  triggerLog = 0; //reset buffer when changing trigger value
 }
