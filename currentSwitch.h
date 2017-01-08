@@ -1,4 +1,11 @@
 /*
+CurrentSwitch Is a library to use non invasive current probe to use it a a 'working proof'. 
+This skecht use a SCT-013-000. Interface with arduino here and original emonLib library:
+ ***************  https://github.com/openenergymonitor/EmonLib  *************
+
+Instead of emonLib that read real current, this on only return 'true' if there is 'some current'. 
+This is usefull usefull as workproof and very weightless compare to emonLib.
+
 
   Copyright (c) 31/07/2015
 
@@ -27,28 +34,33 @@
   */
 
 
-#ifndef currentSwitch_h
-#define currentSwitch_h
+#ifndef CurrentSwitch_h
+#define CurrentSwitch_h
 #include "Arduino.h"
 
-class currentSwitch
+
+class CurrentSwitch
 {
   public:
-
-    void initCurrentSwitch(int setReso); // initiation function
-    void setCurrentSwitch(int channelId, int Irange, int Itrigger); // star an analog input
-    void update(); // realtime input monitoring
+    CurrentSwitch(int channelId, int Irange, int Itrigger); // star an analog input
+    ~CurrentSwitch();
+    static void handler(); // realtime input monitoring
     boolean workProof(int input); //output return function
+    static void reso(int reso);
+    void trigger(int Itrigger);
 
   private:
-    int reso = 1024;  	// input resolution
-    int bias = 512;  //bias = resolution /2
-    int	lastMillis = 0; //timer for reading update
-    int triggerBit[12]; // store value that will trigger the output
-    int triggerLog[12]; //store tigger true to debounce output
-    boolean inputSet[12] = {false, false, false, false, false, false, false, false, false, false, false, false}; // input started var
-
+    static const uint8_t containerSize = 6;
+    static CurrentSwitch* container[containerSize];
+    static int _reso;  	// analog resolution resolution
+    static int bias;  //bias = resolution /2
+    static unsigned long	lastMillis; //timer for reading update
+    int triggerBit; // store value that will trigger the output
+    int triggerLog; //store tigger true to debounce output
+    uint8_t input;
     int inputRead(int input); //reading analog input
+    int _Irange;
+    int _Itrigger;
 };
 
 #endif
