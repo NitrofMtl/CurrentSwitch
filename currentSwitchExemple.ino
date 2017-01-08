@@ -1,4 +1,5 @@
-@@ -0,0 +1,66 @@
+
+
 /*
 
 CurrentSwitch Is a library to use non invasive current probe to use it a a 'working proof'. 
@@ -32,19 +33,22 @@ This is usefull usefull as workproof and very weightless compare to emonLib.
   */
 
 
+#include <TimerOne.h>
+#include <CurrentSwitch.h>
 
-#include <currentSwitch.h>
-#include <Scheduler.h>
+
 
 int input1 = 0; //var for analog input
-currentSwitch test1; //start an instance of the library
+CurrentSwitch test1(input1, 100, 10); //start an instance (analog intput pin, sensor current range, current trigger)
 
 void setup() {
   Serial.begin(9600);
-  analogReadResolution(12);
-  test1.initCurrentSwitch(12); // initiate library, analog resolution 10 or 12 for arduino DUE
-  test1.setCurrentSwitch(input1, 100, 10); //start an analog intput, sensor current range, current trigger
-  Scheduler.startLoop(inputMonitor);// start an instance of sceduler for real time input reading
+  //analogReadResolution(12); //arduino DUE only for 12bit analog resolution
+  //CurrentSwitch::reso(12); //arduino DUE only for 12bit analog resolution
+
+    //Monitoring of sensor is done trough an interrupt timer
+  Timer1.initialize(1000000);//run timer at 10Hz
+  Timer1.attachInterrupt(CurrentSwitch::handler); // handle monitoring of all CurrentSwitch instance
 }
 
 void loop() {
@@ -55,12 +59,9 @@ void loop() {
   else if (!test1.workProof(input1)) { //if not working
     Serial.println("input not working");
   }
-  yield();
+
+ // test1.trigger(15);//change the value of current trigger at anytime, 
+        //when changing, reading buffer is reset so it will return false at first
+
   delay(1000);
 }
-
-void inputMonitor() {
-  test1.update(); //monitorize current sensor
-  yield();
-}
-
