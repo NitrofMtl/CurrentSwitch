@@ -1,6 +1,6 @@
-currentSwitch	KEYWORD1
-initCurrentSwitch	KEYWORD2
-setCurrentSwitch	KEYWORD2
+CurrentSwitch	KEYWORD1
+handler	KEYWORD2
+reso	KEYWORD2
 workProof	KEYWORD2
-
+trigger	KEYWORD2
 
