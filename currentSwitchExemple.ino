@@ -39,7 +39,7 @@ This is usefull usefull as workproof and very weightless compare to emonLib.
 
 
 int input1 = 0; //var for analog input
-CurrentSwitch test1(input1, 100, 10); //start an instance (analog intput pin, sensor current range, current trigger)
+CurrentSwitch test1(input1, 100, 10); //start an instance (analog intput pin, sensor current range, current level trigger)
 
 void setup() {
   Serial.begin(9600);
