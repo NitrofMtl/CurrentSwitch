@@ -34,7 +34,7 @@ This is usefull usefull as workproof and very weightless compare to emonLib.
 
 
 #include <TimerOne.h>
-#include <CurrentSwitch.h>
+#include <currentSwitch.h>
 
 
 
