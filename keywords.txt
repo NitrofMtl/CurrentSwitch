@@ -1,0 +1,6 @@
+CurrentSwitch	KEYWORD1
+handler	KEYWORD2
+reso	KEYWORD2
+workProof	KEYWORD2
+trigger	KEYWORD2
+
