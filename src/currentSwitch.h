@@ -7,7 +7,7 @@ Instead of emonLib that read real current, this on only return 'true' if there i
 This is usefull usefull as workproof and very weightless compare to emonLib.
 
 
-  Copyright (c) 31/07/2015
+  Copyright (c) 05/08/2022
 
     By Nitrof
 
@@ -38,29 +38,31 @@ This is usefull usefull as workproof and very weightless compare to emonLib.
 #define CurrentSwitch_h
 #include "Arduino.h"
 
+#define ANALOG_RESO_10 0
+#define ANALOG_RESO_12 1
+
+#define WORKPROFF_DECOUNT_SIZE 3
+
+#define DROP -1
+#define RISE 1
+#define CHANGE_FLAG (1u << 1)
 
 class CurrentSwitch
 {
   public:
-    CurrentSwitch(int channelId, int Irange, int Itrigger); // star an analog input
-    ~CurrentSwitch();
-    static void handler(); // realtime input monitoring
-    boolean workProof(int input); //output return function
-    static void reso(int reso);
-    void trigger(int Itrigger);
-
+  CurrentSwitch(bool reso, int IRange, int ITreshold);
+  void handler();
+  bool workProof() const;
+  void read(uint16_t);
+  bool rised();
+  bool droped();
+  int changed();
+  uint32_t currentSamplingPeriod(int baseF);
   private:
-    static const uint8_t containerSize = 6;
-    static CurrentSwitch* container[containerSize];
-    static int _reso;  	// analog resolution resolution
-    static int bias;  //bias = resolution /2
-    static unsigned long	lastMillis; //timer for reading update
-    int triggerBit; // store value that will trigger the output
-    int triggerLog; //store tigger true to debounce output
-    uint8_t input;
-    int inputRead(int input); //reading analog input
-    int _Irange;
-    int _Itrigger;
+    static uint16_t offset;
+    uint16_t ITreshold = 0;
+    uint8_t workProofDecount = 0;
+    int8_t changeTracker = 0;
 };
 
-#endif
+#endif //CurrentSwitch_h

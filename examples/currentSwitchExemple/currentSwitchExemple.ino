@@ -34,34 +34,60 @@ This is usefull usefull as workproof and very weightless compare to emonLib.
 
 
 #include <TimerOne.h>
-#include <CurrentSwitch.h>
+#include <currentSwitch.h>
 
 
 
-int input1 = 0; //var for analog input
-CurrentSwitch test1(input1, 100, 10); //start an instance (analog intput pin, sensor current range, current level trigger)
+#define INPUT1 0 //var for analog input
+#define CURRENT_SCALE 100
+#define CURRENT_TRESHOLD 10
+
+
+#define SECTOR_FREQUENCY 60 // or 50Hz in some country
+
+//use ANALOG_RESO_12 if you use 12 bit ADC
+CurrentSwitch test1(ANALOG_RESO_10, CURRENT_SCALE, CURRENT_TRESHOLD); //start an instance (analog intput pin, sensor current range, current level trigger)
 
 void setup() {
   Serial.begin(9600);
-  //analogReadResolution(12); //arduino DUE only for 12bit analog resolution
-  //CurrentSwitch::reso(12); //arduino DUE only for 12bit analog resolution
+  //analogReadResolution(12); // for 12bit analog resolution
+  
 
     //Monitoring of sensor is done trough an interrupt timer
-  Timer1.initialize(1000000);//run timer at 10Hz
-  Timer1.attachInterrupt(CurrentSwitch::handler); // handle monitoring of all CurrentSwitch instance
+  Timer1.initialize(test1.currentSamplingPeriod(SECTOR_FREQUENCY));
+  Timer1.attachInterrupt(readCurrentISR); // handle monitoring of all CurrentSwitch instance
 }
 
 void loop() {
   //use the workProff function to trigger something
-  if (test1.workProof(input1)) { //if working
+  if (test1.workProof()) { //if working
     Serial.println("input working");
   }
-  else if (!test1.workProof(input1)) { //if not working
+  else if (!test1.workProof()) { //if not working
     Serial.println("input not working");
   }
 
- // test1.trigger(15);//change the value of current trigger at anytime, 
-        //when changing, reading buffer is reset so it will return false at first
+  if (test1.rised()) {
+    Serial.println("The load started!");
+  }
+
+  if (test1.droped()) {
+    Serial.println("The load stoped!")
+  } 
+
+  if (test1.changed() == RISE) {
+    Serial.println("The load started!");
+  }
+  else if (test1.changed() == DROP) {
+    Serial.println("The load stoped!");
+  }
 
   delay(1000);
+}
+
+void readCurrentISR()
+{
+  //read all currentSwitch into the ISR
+  test1.read(analogRead(INPUT1));
+  //other CurrentSwitch.read( [INPUT] );
 }
